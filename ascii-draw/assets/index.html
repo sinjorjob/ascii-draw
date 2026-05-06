@@ -1,0 +1,1910 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>ASCII Draw — Win版</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500;1,9..144,700;1,9..144,900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F7F1E8;
+    --canvas-bg:#FBF7EE;
+    --fg:#2D2A26;
+    --accent:#D97757;
+    --accent-h:#C8633D;
+    --grid:#E8E1D4;
+    --sel:#C5705F;
+    --panel:#EFE9DB;
+    --panel-2:#E2DBC9;
+    --btn:#F4EFE3;
+    --btn-h:#E5DCC6;
+    --btn-a:#D97757;
+    --btn-a-fg:#FBF7EE;
+    --btn-fg:#3D3A36;
+    --good:#6F8E5C;
+    --err:#A05544;
+    --muted:#8B8276;
+    --border:#D4CCBE;
+    --preview:#C8633D;
+    --input-bg:#FFFFFF;
+    --shadow:0 1px 2px rgba(45,42,38,0.06), 0 4px 12px rgba(45,42,38,0.04);
+    /* Group accent colors */
+    --c-olive:#7A8B4F;
+    --c-sage:#6F8E5C;
+    --c-azure:#4A7593;
+    --c-amber:#C58A2C;
+    --c-plum:#9B5A7F;
+    --c-rust:#A05544;
+    --c-terra:#D97757;
+    --c-navy:#3F5775;
+    /* Drafting-table palette */
+    --table-1:#C6B393;
+    --table-2:#A89070;
+    --table-cross:rgba(45,42,38,0.06);
+    --table-noise:rgba(255,250,235,0.07);
+    --paper-edge:rgba(45,42,38,0.10);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);height:100%}
+  body{font:13px/1.45 'Plus Jakarta Sans',-apple-system,"Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden;letter-spacing:.005em;font-feature-settings:'cv11','ss01'}
+  header{background:var(--panel);padding:16px 12px 8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0}
+  header .group{
+    display:flex;gap:2px;
+    border:1px solid var(--border);border-radius:7px;
+    padding:0 4px;background:var(--panel-2);
+    position:relative;align-items:center;
+    height:38px;box-sizing:border-box;
+  }
+  .group-label{position:absolute;top:-9px;left:7px;background:var(--panel);padding:0 6px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;line-height:14px;border-radius:3px;color:var(--c-olive);font-family:'JetBrains Mono','Consolas',monospace}
+  .group[data-color="olive"] .group-label{color:var(--c-olive)}
+  .group[data-color="sage"]  .group-label{color:var(--c-sage)}
+  .group[data-color="azure"] .group-label{color:var(--c-azure)}
+  .group[data-color="amber"] .group-label{color:var(--c-amber)}
+  .group[data-color="plum"]  .group-label{color:var(--c-plum)}
+  .group[data-color="rust"]  .group-label{color:var(--c-rust)}
+  .group[data-color="terra"] .group-label{color:var(--c-terra)}
+  .group[data-color="navy"]  .group-label{color:var(--c-navy)}
+  .group[data-color="olive"]{box-shadow:inset 3px 0 0 -1px var(--c-olive)}
+  .group[data-color="sage"] {box-shadow:inset 3px 0 0 -1px var(--c-sage)}
+  .group[data-color="azure"]{box-shadow:inset 3px 0 0 -1px var(--c-azure)}
+  .group[data-color="amber"]{box-shadow:inset 3px 0 0 -1px var(--c-amber)}
+  .group[data-color="plum"] {box-shadow:inset 3px 0 0 -1px var(--c-plum)}
+  .group[data-color="rust"] {box-shadow:inset 3px 0 0 -1px var(--c-rust)}
+  .group[data-color="terra"]{box-shadow:inset 3px 0 0 -1px var(--c-terra)}
+  .group[data-color="navy"] {box-shadow:inset 3px 0 0 -1px var(--c-navy)}
+  header button, header label{
+    background:var(--btn);color:var(--btn-fg);border:0;padding:0 10px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:500;
+    height:28px;line-height:1;
+    display:inline-flex;align-items:center;gap:4px;user-select:none;transition:background .12s,color .12s,box-shadow .12s;
+    box-sizing:border-box;
+  }
+  header label{cursor:pointer;font-weight:500;gap:5px}
+  header button:hover{background:var(--btn-h)}
+  header button.active{background:var(--btn-a);color:var(--btn-a-fg);font-weight:600;box-shadow:0 1px 2px rgba(217,119,87,0.3)}
+  header button:disabled{opacity:.35;cursor:not-allowed}
+  header .sep{display:none}
+  /* Selection-shift group: dim when no selection, light up when active */
+  #shiftGroup button{font-family:ui-monospace,monospace;font-size:13px;padding:0;width:32px;height:28px;justify-content:center}
+  #shiftGroup.has-selection button{background:#F0E5DA;color:var(--c-plum)}
+  #shiftGroup.has-selection button:hover{background:#E8D7C8;color:#7A446A}
+  header input[type=number]{
+    width:50px;height:24px;
+    background:var(--input-bg);color:var(--fg);
+    border:1px solid var(--border);border-radius:4px;
+    padding:0 6px;font-family:'JetBrains Mono','Consolas',monospace;font-size:12px;
+    box-sizing:border-box;
+  }
+  header input[type=number]:focus{border-color:var(--accent);outline:none}
+  header input[type=checkbox]{accent-color:var(--accent);margin:0}
+  main{
+    flex:1;overflow:auto;position:relative;
+    padding:108px 32px 80px;
+    background-color:#ECDDB9;
+    background-image:
+      /* HUGE italic "ascii" wordmark — peeks out around the canvas */
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1400 600' preserveAspectRatio='none'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%23D97757' stop-opacity='0.26'/><stop offset='100%25' stop-color='%234A7593' stop-opacity='0.16'/></linearGradient></defs><text x='700' y='470' fill='url(%23g)' font-size='580' font-family='Georgia,Times New Roman,serif' font-style='italic' font-weight='900' text-anchor='middle' letter-spacing='-22'>ascii</text></svg>"),
+      /* "draw." flourish, top-left */
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 220' preserveAspectRatio='xMinYMin meet'><text x='32' y='160' fill='%23454238' fill-opacity='0.22' font-size='160' font-family='Georgia,serif' font-style='italic' font-weight='700' letter-spacing='-3'>draw.</text></svg>"),
+      /* "n° 001 — MMXXVI" editorial chapter stamp, top-right */
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 280 90' preserveAspectRatio='xMaxYMin meet'><g fill='%23D97757' font-family='Consolas,monospace' font-weight='500'><text x='268' y='30' font-size='13' letter-spacing='3' text-anchor='end' opacity='0.70'>N%C2%B0 001</text></g><line x1='168' y1='42' x2='268' y2='42' stroke='%23D97757' stroke-opacity='0.45' stroke-width='0.7'/><text x='268' y='60' font-size='10' letter-spacing='4' text-anchor='end' fill='%23454238' fill-opacity='0.40' font-family='Consolas,monospace' font-weight='400'>MMXXVI</text><text x='268' y='78' font-size='9' letter-spacing='3' text-anchor='end' fill='%23454238' fill-opacity='0.30' font-family='Consolas,monospace'>ascii · workspace</text></svg>"),
+      /* horizontal accent line below "draw." */
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 4'><line x1='0' y1='2' x2='100' y2='2' stroke='%23D97757' stroke-opacity='0.55' stroke-width='1.4' stroke-linecap='round'/><circle cx='110' cy='2' r='1.6' fill='%23D97757' fill-opacity='0.50'/></svg>"),
+      /* soft warm peach blob — top-left */
+      radial-gradient(ellipse 45% 40% at 12% 18%, rgba(217,119,87,0.13) 0%, transparent 65%),
+      /* soft amber/honey blob — bottom-right */
+      radial-gradient(ellipse 42% 36% at 88% 82%, rgba(197,138,44,0.13) 0%, transparent 65%),
+      /* faint cream highlight — top-right */
+      radial-gradient(ellipse 26% 20% at 78% 12%, rgba(255,248,225,0.32) 0%, transparent 70%),
+      /* very faint cool wash — bottom-left */
+      radial-gradient(ellipse 30% 26% at 8% 92%, rgba(74,117,147,0.06) 0%, transparent 70%),
+      /* almost invisible 16px dot grid */
+      radial-gradient(circle at 1px 1px, rgba(45,42,38,0.035) 0.45px, transparent 0.5px),
+      /* base diagonal warm gradient */
+      linear-gradient(160deg, #F4E6C5 0%, #D5C29B 100%);
+    background-size:
+      100% 100%,         /* big ascii wordmark */
+      auto 80px,         /* draw. flourish */
+      auto 80px,         /* chapter stamp top-right */
+      auto 4px,          /* horizontal line under draw. */
+      100% 100%,
+      100% 100%,
+      100% 100%,
+      100% 100%,
+      16px 16px,
+      100% 100%;
+    background-repeat:
+      no-repeat,
+      no-repeat,
+      no-repeat,
+      no-repeat,
+      no-repeat, no-repeat, no-repeat, no-repeat,
+      repeat,
+      no-repeat;
+    background-position:
+      center center,                   /* big ascii wordmark */
+      36px 16px,                       /* draw. flourish */
+      right 32px top 18px,             /* chapter stamp */
+      40px 96px,                       /* horizontal accent line under draw. */
+      0 0, 0 0, 0 0, 0 0,
+      0 0,
+      0 0;
+  }
+  /* Vertical sidebar text on right edge — JetBrains Mono */
+  main::before{
+    content:'ANTHROPIC · CLAUDE · WORKSPACE · 2026';
+    position:absolute;
+    top:50%;right:14px;
+    transform:translateY(-50%);
+    writing-mode:vertical-rl;
+    text-orientation:mixed;
+    font:500 10px/1 'JetBrains Mono','Consolas',monospace;
+    letter-spacing:0.42em;
+    color:rgba(45,42,38,0.28);
+    pointer-events:none;
+    z-index:0;
+    user-select:none;
+  }
+  /* Bottom-right italic Fraunces watermark with terracotta dot */
+  main::after{
+    content:'·  a · ascii workspace';
+    position:absolute;
+    bottom:22px;right:32px;
+    font:italic 500 11px/1 'Fraunces','Source Serif Pro',Georgia,serif;
+    letter-spacing:0.28em;
+    color:rgba(45,42,38,0.36);
+    pointer-events:none;
+    z-index:0;
+  }
+  #canvas{
+    display:block;cursor:crosshair;
+    background:var(--canvas-bg);
+    border-radius:3px;
+    box-shadow:
+      0 0 0 1px var(--paper-edge),
+      inset 0 0 60px rgba(255,255,255,0.30),
+      0 1px 2px rgba(45,42,38,0.08),
+      0 12px 28px rgba(45,42,38,0.20),
+      0 36px 64px rgba(45,42,38,0.14);
+    margin:0 auto;
+    position:relative;
+    z-index:1;
+  }
+  footer{background:var(--panel);padding:6px 12px;font-size:11px;border-top:1px solid var(--border);display:flex;gap:14px;flex-wrap:wrap;flex-shrink:0;color:var(--muted)}
+  .hint{color:var(--muted)}
+  kbd{background:var(--btn);border:1px solid var(--border);padding:1px 5px;border-radius:3px;font-size:10px;font-family:ui-monospace,monospace;color:var(--btn-fg)}
+  #status{font-family:ui-monospace,monospace;min-width:140px;color:var(--btn-fg)}
+  #aiBar{background:linear-gradient(180deg,#F4EDDD,#EBE4D2);padding:11px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0}
+  #aiPrompt{flex:1;background:var(--input-bg);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:10px 13px;font:500 14px/1.4 'Plus Jakarta Sans',-apple-system,"Segoe UI",system-ui,sans-serif;outline:none;transition:border-color .12s,box-shadow .12s}
+  #aiPrompt:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(217,119,87,0.18)}
+  #aiPrompt:disabled{opacity:.6;background:var(--btn)}
+  #aiGenBtn{background:var(--accent);color:var(--btn-a-fg);border:0;padding:10px 18px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap;transition:background .12s;box-shadow:0 1px 2px rgba(217,119,87,0.3)}
+  #aiGenBtn:hover:not(:disabled){background:var(--accent-h)}
+  #aiEditBtn{background:var(--btn);color:var(--btn-fg);border:1px solid var(--border);padding:10px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;transition:background .12s}
+  #aiEditBtn:hover:not(:disabled){background:var(--btn-h)}
+  #aiGenBtn:disabled,#aiEditBtn:disabled{opacity:.5;cursor:not-allowed}
+  #aiStatus{font-size:12px;color:var(--muted);min-width:140px}
+  #aiStatus.busy{color:var(--accent)}
+  #aiStatus.ok{color:var(--good)}
+  #aiStatus.err{color:var(--err)}
+  .spinner{display:inline-block;width:11px;height:11px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;vertical-align:-1px;margin-right:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ===== Help modal — Editorial × Warm-Craft ===== */
+  #helpOverlay{
+    position:fixed;inset:0;z-index:2000;
+    background:rgba(45,42,38,0.42);backdrop-filter:blur(3px);
+    display:flex;align-items:flex-start;justify-content:center;
+    padding:48px 24px;overflow-y:auto;
+    animation:helpFade .18s ease-out;
+  }
+  @keyframes helpFade{from{opacity:0}to{opacity:1}}
+  @keyframes helpRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  #helpModal{
+    width:100%;max-width:860px;
+    background:#FBF7EE;
+    border:1px solid #D4CCBE;
+    border-radius:10px;
+    box-shadow:0 2px 4px rgba(45,42,38,0.06),0 24px 60px rgba(45,42,38,0.28);
+    padding:40px 56px 48px;
+    position:relative;
+    color:#2D2A26;
+    animation:helpRise .22s ease-out;
+    font-family:'Plus Jakarta Sans',-apple-system,"Segoe UI",system-ui,sans-serif;
+    /* Sketched paper texture: faint dot grid + warm radial wash */
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(45,42,38,0.038) 0.5px, transparent 0.6px),
+      radial-gradient(ellipse 60% 50% at 100% 0%, rgba(217,119,87,0.05) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 50% at 0% 100%, rgba(74,117,147,0.04) 0%, transparent 55%);
+    background-size:14px 14px, 100% 100%, 100% 100%;
+  }
+  #helpClose{
+    position:absolute;top:16px;right:16px;
+    width:32px;height:32px;border-radius:6px;
+    background:transparent;border:1px solid transparent;
+    color:#8B8276;cursor:pointer;font-size:18px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .12s,border-color .12s,color .12s;
+  }
+  #helpClose:hover{background:#F4EFE3;border-color:#D4CCBE;color:#2D2A26}
+
+  /* Header — Fraunces italic display, JetBrains Mono chapter stamp */
+  .help-eyebrow{
+    display:flex;align-items:center;gap:14px;
+    font:500 10.5px/1 'JetBrains Mono','Consolas',monospace;
+    letter-spacing:.32em;text-transform:uppercase;
+    color:#D97757;
+    margin-bottom:14px;
+  }
+  .help-eyebrow::before{
+    content:'';width:38px;height:1.4px;background:#D97757;border-radius:2px;
+    box-shadow:46px 0 0 -0.4px #D97757;
+    margin-right:2px;
+  }
+  .help-title{
+    font:italic 700 44px/1.05 'Fraunces','Source Serif Pro',Georgia,serif;
+    letter-spacing:-.015em;
+    color:#2D2A26;
+    margin:0 0 8px;
+  }
+  .help-title em{font-style:italic;color:#D97757;font-weight:700}
+  .help-subtitle{
+    font:400 14px/1.55 'Plus Jakarta Sans',sans-serif;
+    color:#5C5852;max-width:580px;
+    margin:0 0 32px;
+  }
+  .help-rule{
+    height:0;border-top:1px solid #D4CCBE;
+    margin:0 0 36px;position:relative;
+  }
+  .help-rule::after{
+    content:'';position:absolute;left:0;top:-1px;width:84px;height:1.6px;
+    background:#D97757;border-radius:2px;
+  }
+
+  /* Section — chapter-style numbered headings */
+  .help-section{margin-bottom:38px}
+  .help-section:last-child{margin-bottom:0}
+  .help-h2{
+    display:flex;align-items:baseline;gap:14px;
+    font:600 22px/1.2 'Fraunces','Source Serif Pro',Georgia,serif;
+    color:#2D2A26;margin:0 0 18px;letter-spacing:-.005em;
+  }
+  .help-h2 .num{
+    font:500 11px/1 'JetBrains Mono','Consolas',monospace;
+    letter-spacing:.18em;color:#D97757;
+    background:rgba(217,119,87,0.10);
+    border:1px solid rgba(217,119,87,0.25);
+    border-radius:4px;padding:5px 8px;
+    flex-shrink:0;
+  }
+  .help-h2 em{font-style:italic;color:#A05544;font-weight:500}
+  .help-lede{
+    font:400 13.5px/1.65 'Plus Jakarta Sans',sans-serif;
+    color:#5C5852;margin:0 0 16px;max-width:680px;
+  }
+
+  /* Quick-start cards — three steps, asymmetric */
+  .help-steps{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+    margin-top:6px;
+  }
+  .help-step{
+    background:#F4EDDD;border:1px solid #E2DBC9;border-radius:8px;
+    padding:18px 18px 16px;position:relative;
+    box-shadow:0 1px 2px rgba(45,42,38,0.04);
+  }
+  .help-step .step-n{
+    font:italic 700 28px/1 'Fraunces',Georgia,serif;
+    color:#D97757;display:block;margin-bottom:8px;
+  }
+  .help-step .step-t{
+    font:600 13.5px/1.3 'Plus Jakarta Sans',sans-serif;color:#2D2A26;
+    margin-bottom:6px;letter-spacing:-.005em;
+  }
+  .help-step .step-d{
+    font:400 12.5px/1.55 'Plus Jakarta Sans',sans-serif;color:#5C5852;
+  }
+  .help-step kbd{
+    background:#FBF7EE;border:1px solid #D4CCBE;
+    border-radius:3px;padding:1px 6px;
+    font:500 10.5px 'JetBrains Mono',monospace;color:#3D3A36;
+  }
+
+  /* Tables — borderless, dotted dividers, mono key column */
+  .help-tbl{width:100%;border-collapse:collapse;margin-top:4px}
+  .help-tbl th{
+    text-align:left;padding:6px 10px 8px;
+    font:500 10px/1 'JetBrains Mono','Consolas',monospace;
+    letter-spacing:.16em;text-transform:uppercase;
+    color:#8B8276;border-bottom:1px solid #D4CCBE;
+  }
+  .help-tbl td{
+    padding:9px 10px;
+    border-bottom:1px dotted #D4CCBE;
+    font:400 13px/1.4 'Plus Jakarta Sans',sans-serif;color:#2D2A26;
+    vertical-align:top;
+  }
+  .help-tbl tr:last-child td{border-bottom:0}
+  .help-tbl .icon{
+    width:34px;font:500 15px 'JetBrains Mono',monospace;color:#5C5852;
+  }
+  .help-tbl .key{
+    width:96px;
+    font-family:'JetBrains Mono','Consolas',monospace;
+  }
+  .help-tbl .key kbd, .key-cell kbd{
+    background:#F4EFE3;border:1px solid #D4CCBE;
+    border-radius:3px;padding:1.5px 6px;
+    font:500 11px 'JetBrains Mono',monospace;color:#3D3A36;
+    margin-right:3px;
+  }
+  .help-tbl .desc{color:#3D3A36}
+  .help-tbl tr:hover td{background:rgba(217,119,87,0.05)}
+
+  /* Two-column layout for shortcuts */
+  .help-cols{display:grid;grid-template-columns:1fr 1fr;gap:36px}
+
+  /* Spotlight callout — featured workflow */
+  .help-spotlight{
+    margin:8px 0 22px;
+    background:linear-gradient(180deg,#FBF7EE 0%,#F4EDDD 100%);
+    border:1.5px solid #D97757;
+    border-radius:10px;
+    padding:24px 28px 22px;
+    position:relative;
+    box-shadow:0 1px 2px rgba(217,119,87,0.08),0 8px 24px rgba(217,119,87,0.10);
+  }
+  .help-spotlight::before{
+    content:'⚡ FEATURED';
+    position:absolute;top:-10px;left:22px;
+    background:#D97757;color:#FBF7EE;
+    font:700 9.5px/1 'JetBrains Mono','Consolas',monospace;
+    letter-spacing:.22em;padding:5px 10px;border-radius:4px;
+    box-shadow:0 1px 3px rgba(217,119,87,0.35);
+  }
+  .help-spotlight-title{
+    font:italic 700 22px/1.25 'Fraunces',Georgia,serif;
+    color:#2D2A26;margin:0 0 6px;letter-spacing:-.005em;
+  }
+  .help-spotlight-title em{font-style:italic;color:#D97757}
+  .help-spotlight-lede{
+    font:400 13px/1.6 'Plus Jakarta Sans',sans-serif;
+    color:#5C5852;margin:0 0 18px;
+  }
+  .help-flow{
+    display:grid;
+    grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;
+    gap:0;align-items:stretch;
+  }
+  .help-flow-step{
+    background:#FBF7EE;border:1px solid #E2DBC9;border-radius:7px;
+    padding:14px 14px 12px;text-align:left;
+    box-shadow:0 1px 2px rgba(45,42,38,0.04);
+    display:flex;flex-direction:column;gap:4px;
+  }
+  .help-flow-step .n{
+    font:italic 700 14px/1 'Fraunces',Georgia,serif;
+    color:#D97757;letter-spacing:-.01em;
+  }
+  .help-flow-step .t{
+    font:600 12.5px/1.3 'Plus Jakarta Sans',sans-serif;
+    color:#2D2A26;letter-spacing:-.005em;
+  }
+  .help-flow-step .d{
+    font:400 11.5px/1.5 'Plus Jakarta Sans',sans-serif;color:#5C5852;
+  }
+  .help-flow-step .d kbd, .help-flow-step .d code{
+    background:#F4EFE3;border:1px solid #D4CCBE;
+    border-radius:3px;padding:0.5px 5px;
+    font:500 10.5px 'JetBrains Mono',monospace;color:#3D3A36;
+  }
+  .help-flow-arrow{
+    display:flex;align-items:center;justify-content:center;
+    color:#D97757;font:500 18px/1 'JetBrains Mono',monospace;
+    padding:0 6px;flex-shrink:0;
+  }
+  .help-spotlight-tip{
+    margin-top:16px;padding-top:14px;border-top:1px dotted #D4CCBE;
+    font:italic 500 12.5px/1.55 'Fraunces',Georgia,serif;color:#5C5852;
+  }
+  .help-spotlight-tip strong{color:#A05544;font-weight:600;font-style:normal;font-family:'Plus Jakarta Sans',sans-serif}
+  @media (max-width:780px){
+    .help-flow{grid-template-columns:1fr;gap:8px}
+    .help-flow-arrow{transform:rotate(90deg);padding:2px 0}
+  }
+
+  /* Prompt examples — quoted, italic */
+  .help-prompts{margin-top:6px;display:flex;flex-direction:column;gap:10px}
+  .help-prompt{
+    background:#F4EDDD;border-left:3px solid #D97757;border-radius:0 6px 6px 0;
+    padding:11px 16px 11px 18px;
+    font:italic 500 13px/1.55 'Fraunces',Georgia,serif;color:#3D3A36;
+  }
+  .help-prompt::before{content:'“';color:#D97757;font-size:18px;margin-right:2px;line-height:0}
+  .help-prompt::after{content:'”';color:#D97757;font-size:18px;margin-left:2px;line-height:0}
+
+  /* Color legend chips */
+  .help-colors{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:8px 14px;margin-top:8px;
+  }
+  .help-color{display:flex;align-items:center;gap:10px;font:400 12.5px/1.3 'Plus Jakarta Sans',sans-serif;color:#3D3A36}
+  .help-color .swatch{
+    width:16px;height:16px;border-radius:3px;flex-shrink:0;
+    box-shadow:0 1px 2px rgba(45,42,38,0.15);
+  }
+  .help-color .code{
+    font:500 11px 'JetBrains Mono',monospace;color:#5C5852;
+    background:#F4EFE3;border:1px solid #D4CCBE;border-radius:3px;
+    padding:0 5px;flex-shrink:0;
+  }
+
+  /* Tips — bullet list with custom marker */
+  .help-tips{list-style:none;padding:0;margin:6px 0 0}
+  .help-tips li{
+    position:relative;padding:5px 0 5px 26px;
+    font:400 13px/1.6 'Plus Jakarta Sans',sans-serif;color:#3D3A36;
+  }
+  .help-tips li::before{
+    content:'';position:absolute;left:6px;top:14px;
+    width:8px;height:1.6px;background:#D97757;border-radius:2px;
+  }
+  .help-tips strong{color:#A05544;font-weight:600}
+
+  /* Footer */
+  .help-foot{
+    margin-top:42px;padding-top:18px;
+    border-top:1px solid #D4CCBE;
+    display:flex;justify-content:space-between;align-items:center;
+    font:500 10px/1 'JetBrains Mono',monospace;
+    letter-spacing:.24em;text-transform:uppercase;color:#8B8276;
+  }
+  .help-foot em{font:italic 400 11px 'Fraunces',Georgia,serif;letter-spacing:.04em;color:#A05544;text-transform:none}
+
+  @media (max-width:720px){
+    #helpModal{padding:32px 24px 36px}
+    .help-title{font-size:32px}
+    .help-steps,.help-cols,.help-colors{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="group" data-color="olive" id="toolGroup">
+    <span class="group-label">描画</span>
+    <button data-tool="select" title="選択 (V)">⬚ 選択</button>
+    <button data-tool="pen" class="active" title="ペン (P)">✎ ペン</button>
+    <button data-tool="erase" title="消しゴム (E)">⌫ 消</button>
+    <button data-tool="text" title="テキスト (T)">A 文字</button>
+    <button data-tool="line" title="直線 (L)">─ 線</button>
+    <button data-tool="arrow" title="矢印 (W)">→ 矢印</button>
+    <button data-tool="rect" title="矩形 (R)">▢ 矩形</button>
+    <button data-tool="diamond" title="菱形 (D)">◇ 菱形</button>
+    <button data-tool="ellipse" title="角丸長方形 (O)">▢ 角丸</button>
+  </div>
+  <div class="group" data-color="plum" id="shiftGroup">
+    <span class="group-label">選択シフト</span>
+    <button id="shiftL" title="左へ 1セル (Shift+クリックで4セル)">◄</button>
+    <button id="shiftU" title="上へ 1セル">▲</button>
+    <button id="shiftD" title="下へ 1セル">▼</button>
+    <button id="shiftR" title="右へ 1セル (Shift+クリックで4セル)">►</button>
+  </div>
+  <div class="group" data-color="sage">
+    <span class="group-label">履歴</span>
+    <button id="undoBtn" title="元に戻す (Ctrl+Z)">↶ Undo</button>
+    <button id="redoBtn" title="やり直し (Ctrl+Y)">↷ Redo</button>
+  </div>
+  <div class="group" data-color="azure">
+    <span class="group-label">表示</span>
+    <label><input type="checkbox" id="unicodeChk" checked> Unicode罫線</label>
+    <label><input type="checkbox" id="gridChk" checked> グリッド</label>
+  </div>
+  <div class="group" data-color="amber">
+    <span class="group-label">サイズ</span>
+    <label>幅<input type="number" id="cols" value="100" min="20" max="400"></label>
+    <label>高<input type="number" id="rows" value="40" min="10" max="300"></label>
+    <button id="resizeBtn">適用</button>
+  </div>
+  <div class="group" data-color="rust">
+    <span class="group-label">出力</span>
+    <button id="copyBtn" title="選択範囲または全体をテキストでコピー">📋 コピー</button>
+    <button id="pngBtn" title="PNG画像で保存 (白背景)">🖼 PNG</button>
+    <button id="txtBtn" title=".txtで保存">💾 TXT</button>
+    <button id="clearBtn" title="全消去">🗑 全消去</button>
+  </div>
+  <div class="group" data-color="terra">
+    <span class="group-label">入力</span>
+    <button id="loadBtn" title="テキストを貼り付けて読み込み">📥 貼付</button>
+  </div>
+  <div class="group" data-color="navy">
+    <span class="group-label">案内</span>
+    <button id="helpBtn" title="使い方ガイド (F1)">? ヘルプ</button>
+  </div>
+</header>
+<div id="aiBar">
+  <input id="aiPrompt" type="text" placeholder="描いてほしい図を日本語で入力 (例: ロードバランサー → Webサーバ×2 → DB の構成図) — Enter:新規生成 / Ctrl+Enter:現在の図を修正" autofocus>
+  <button id="aiGenBtn" title="新規にゼロから生成 (Enter)">✨ 生成</button>
+  <button id="aiEditBtn" title="現在の図を元に修正 (Ctrl+Enter)">📝 修正</button>
+  <span id="aiStatus"></span>
+</div>
+<main><canvas id="canvas"></canvas></main>
+<footer>
+  <span id="status">行 1, 列 1</span>
+  <span class="hint">ツール <kbd>V</kbd>選択 <kbd>P</kbd>ペン <kbd>T</kbd>文字 <kbd>L</kbd>線 <kbd>W</kbd>矢印 <kbd>R</kbd>矩形</span>
+  <span class="hint">選択シフト <kbd>←↑↓→</kbd> 1セル · <kbd>Shift+←↑↓→</kbd> 4セル · ボタンも同じ</span>
+  <span class="hint"><kbd>Ctrl+Z/Y</kbd> Undo/Redo · <kbd>Ctrl+C/X/V</kbd>コピー/カット/貼付 · <kbd>Esc</kbd>解除</span>
+</footer>
+<script>
+(()=>{
+'use strict';
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const FONT = '14px ui-monospace, "Cascadia Mono", "Consolas", "MS Gothic", monospace';
+const CELL_W = 9;
+const CELL_H = 18;
+let COLS = 140, ROWS = 35;
+
+// state
+let grid = makeGrid(ROWS, COLS);
+let colorGrid = makeColorGrid(ROWS, COLS);
+let boldGrid = makeBoldGrid(ROWS, COLS);
+let preview = null;
+let tool = 'pen';
+let useUnicode = true;
+let showGrid = true;
+let history = [];
+let future = [];
+const HISTORY_MAX = 100;
+
+let drag = null;
+let selection = null;
+let textCursor = null;
+let blinkOn = true;
+let exportMode = false; // when true, render() uses PPT-friendly white bg
+let internalClipboard = null; // {data, colors, h, w} for paste with color preservation
+
+// Color palette: single-letter code -> hex (matches server SYSTEM_PROMPT codes)
+const COLOR_BY_CODE = {
+  'B':'#3D6FA3', // blue   - UI/client
+  'T':'#2F857F', // teal   - cache/queue
+  'G':'#4F8A45', // green  - success/healthy
+  'L':'#7A8B4F', // olive  - utility/config
+  'M':'#B8821F', // amber  - DB/data store
+  'O':'#D17040', // orange - API/service
+  'R':'#A04030', // red    - error/critical
+  'P':'#8B4F75', // plum   - external/3rd-party
+  'N':'#5C5852'  // gray   - neutral/comments
+};
+function colorFromCode(code){
+  if(!code || code === ' ') return null;
+  return COLOR_BY_CODE[code.toUpperCase()] || null;
+}
+
+// ---------- helpers ----------
+function makeGrid(r,c){ return Array.from({length:r},()=>Array(c).fill(' ')); }
+function makeColorGrid(r,c){ return Array.from({length:r},()=>Array(c).fill(null)); }
+function makeBoldGrid(r,c){ return Array.from({length:r},()=>Array(c).fill(false)); }
+function cloneGrid(g){ return g.map(row=>row.slice()); }
+function inBounds(r,c){ return r>=0 && r<ROWS && c>=0 && c<COLS; }
+function setCell(g,r,c,ch){ if(inBounds(r,c)) g[r][c]=ch; }
+
+// CJK / full-width handling: a full-width char occupies 2 cells.
+// The first cell holds the actual character, the second holds TAIL (invisible marker).
+const TAIL = '​';
+function isFullWidth(ch){
+  if(!ch || ch===' ' || ch===TAIL) return false;
+  const cp = ch.codePointAt(0);
+  return (
+    (cp>=0x1100&&cp<=0x115F)||(cp>=0x2E80&&cp<=0x303E)||
+    (cp>=0x3041&&cp<=0x33FF)||(cp>=0x3400&&cp<=0x4DBF)||
+    (cp>=0x4E00&&cp<=0x9FFF)||(cp>=0xA000&&cp<=0xA4CF)||
+    (cp>=0xAC00&&cp<=0xD7A3)||(cp>=0xF900&&cp<=0xFAFF)||
+    (cp>=0xFE30&&cp<=0xFE4F)||(cp>=0xFF00&&cp<=0xFF60)||
+    (cp>=0xFFE0&&cp<=0xFFE6)||(cp>=0x20000&&cp<=0x3FFFD)
+  );
+}
+
+function norm(s){
+  return {
+    r0:Math.min(s.r0,s.r1), c0:Math.min(s.c0,s.c1),
+    r1:Math.max(s.r0,s.r1), c1:Math.max(s.c0,s.c1)
+  };
+}
+
+function pushHistory(){
+  history.push({g:cloneGrid(grid), c:cloneGrid(colorGrid), b:cloneGrid(boldGrid)});
+  if(history.length>HISTORY_MAX) history.shift();
+  future.length = 0;
+  updateButtons();
+}
+function undo(){
+  if(!history.length) return;
+  future.push({g:cloneGrid(grid), c:cloneGrid(colorGrid), b:cloneGrid(boldGrid)});
+  const prev = history.pop();
+  grid = prev.g; colorGrid = prev.c; boldGrid = prev.b || makeBoldGrid(ROWS, COLS);
+  selection = null; textCursor = null;
+  render(); updateButtons();
+}
+function redo(){
+  if(!future.length) return;
+  history.push({g:cloneGrid(grid), c:cloneGrid(colorGrid), b:cloneGrid(boldGrid)});
+  const next = future.pop();
+  grid = next.g; colorGrid = next.c; boldGrid = next.b || makeBoldGrid(ROWS, COLS);
+  render(); updateButtons();
+}
+function updateButtons(){
+  document.getElementById('undoBtn').disabled = !history.length;
+  document.getElementById('redoBtn').disabled = !future.length;
+}
+
+// ---------- char sets ----------
+const CHARS = {
+  unicode: {
+    h:'─', v:'│', tl:'┌', tr:'┐', bl:'└', br:'┘',
+    aR:'▶', aL:'◀', aU:'▲', aD:'▼',
+    diaSlash:'╱', diaBack:'╲',
+    pen:'█'
+  },
+  ascii: {
+    h:'-', v:'|', tl:'+', tr:'+', bl:'+', br:'+',
+    aR:'>', aL:'<', aU:'^', aD:'v',
+    diaSlash:'/', diaBack:'\\',
+    pen:'#'
+  }
+};
+const CH = ()=> CHARS[useUnicode?'unicode':'ascii'];
+
+// ---------- junctions ----------
+const DIRS = {
+  '─':{e:1,w:1}, '│':{n:1,s:1},
+  '┌':{e:1,s:1}, '┐':{w:1,s:1}, '└':{e:1,n:1}, '┘':{w:1,n:1},
+  '┬':{e:1,w:1,s:1}, '┴':{e:1,w:1,n:1},
+  '├':{n:1,s:1,e:1}, '┤':{n:1,s:1,w:1},
+  '┼':{n:1,s:1,e:1,w:1}
+};
+const DIR2CHAR = {
+  'ew':'─','ns':'│','es':'┌','sw':'┐','en':'└','nw':'┘',
+  'esw':'┬','enw':'┴','nes':'├','nsw':'┤','nesw':'┼'
+};
+function dirsToChar(d){
+  const k = (d.n?'n':'')+(d.e?'e':'')+(d.s?'s':'')+(d.w?'w':'');
+  return DIR2CHAR[k];
+}
+function putWithJunction(g,r,c,newCh){
+  if(!inBounds(r,c)) return;
+  const cur = g[r][c];
+  if(cur===' ' || cur===newCh){ g[r][c]=newCh; return; }
+  if(!useUnicode){
+    // overdrawing line/box chars -> use '+'
+    if('-|+'.includes(cur) && '-|+'.includes(newCh)){ g[r][c]='+'; return; }
+    g[r][c]=newCh; return;
+  }
+  const a = DIRS[cur], b = DIRS[newCh];
+  if(!a || !b){ g[r][c]=newCh; return; }
+  const merged = {n:a.n||b.n, s:a.s||b.s, e:a.e||b.e, w:a.w||b.w};
+  g[r][c] = dirsToChar(merged) || newCh;
+}
+function cornerChar(hSide, vSide){
+  // hSide: 'left' = horizontal segment is to the left; 'right' = to the right
+  // vSide: 'down' = vertical segment goes down; 'up' = goes up
+  if(!useUnicode) return '+';
+  if(hSide==='left' && vSide==='down') return '┐';
+  if(hSide==='left' && vSide==='up')   return '┘';
+  if(hSide==='right'&& vSide==='down') return '┌';
+  if(hSide==='right'&& vSide==='up')   return '└';
+  return '+';
+}
+
+// ---------- shape drawing ----------
+function drawLineCells(g, r0,c0,r1,c1){
+  const C = CH();
+  if(r0===r1 && c0===c1){ putWithJunction(g,r0,c0,C.h); return; }
+  if(r0===r1){
+    const [a,b] = c0<c1?[c0,c1]:[c1,c0];
+    for(let c=a;c<=b;c++) putWithJunction(g,r0,c,C.h);
+  } else if(c0===c1){
+    const [a,b] = r0<r1?[r0,r1]:[r1,r0];
+    for(let r=a;r<=b;r++) putWithJunction(g,r,c0,C.v);
+  } else {
+    // L-shape: H first, then V, corner at (r0,c1)
+    const cA=Math.min(c0,c1), cB=Math.max(c0,c1);
+    for(let c=cA;c<=cB;c++) putWithJunction(g,r0,c,C.h);
+    const rA=Math.min(r0,r1), rB=Math.max(r0,r1);
+    for(let r=rA;r<=rB;r++) putWithJunction(g,r,c1,C.v);
+    setCell(g, r0, c1, cornerChar(c0<c1?'left':'right', r0<r1?'down':'up'));
+  }
+}
+
+function drawRect(g, r0,c0,r1,c1){
+  const C = CH();
+  const rA=Math.min(r0,r1), rB=Math.max(r0,r1);
+  const cA=Math.min(c0,c1), cB=Math.max(c0,c1);
+  if(rA===rB || cA===cB){ drawLineCells(g, r0,c0,r1,c1); return; }
+  for(let c=cA+1;c<cB;c++){ putWithJunction(g,rA,c,C.h); putWithJunction(g,rB,c,C.h); }
+  for(let r=rA+1;r<rB;r++){ putWithJunction(g,r,cA,C.v); putWithJunction(g,r,cB,C.v); }
+  setCell(g,rA,cA,C.tl); setCell(g,rA,cB,C.tr);
+  setCell(g,rB,cA,C.bl); setCell(g,rB,cB,C.br);
+}
+
+function drawArrow(g, r0,c0,r1,c1){
+  drawLineCells(g, r0,c0,r1,c1);
+  const C = CH();
+  let head;
+  if(r0===r1 && c0===c1){ head = C.aR; }
+  else if(r0===r1){ head = c1>c0 ? C.aR : C.aL; }
+  else if(c0===c1){ head = r1>r0 ? C.aD : C.aU; }
+  else { head = r1>r0 ? C.aD : C.aU; } // L last seg is vertical
+  setCell(g, r1, c1, head);
+}
+
+function drawDiagLine(g, r0,c0,r1,c1){
+  const C = CH();
+  const dr = r1-r0, dc = c1-c0;
+  const steps = Math.max(Math.abs(dr), Math.abs(dc));
+  if(steps===0){ setCell(g,r0,c0,'·'); return; }
+  for(let i=0;i<=steps;i++){
+    const r = Math.round(r0 + dr*i/steps);
+    const c = Math.round(c0 + dc*i/steps);
+    let chr;
+    if(dc===0) chr = C.v;
+    else if(dr===0) chr = C.h;
+    else chr = (dr*dc>0) ? C.diaBack : C.diaSlash;
+    setCell(g,r,c,chr);
+  }
+}
+
+function drawDiamond(g, r0,c0,r1,c1){
+  // Stretched hexagon. Top edge uses `‾` (top-of-cell line) and bottom uses
+  // `_` (bottom-of-cell line) so they align exactly with the Y where the
+  // ╱╲ slopes exit/enter. Cleaner than `─` at middle-Y.
+  const rA=Math.min(r0,r1), rB=Math.max(r0,r1);
+  const cA=Math.min(c0,c1), cB=Math.max(c0,c1);
+  const H = rB-rA+1, W = cB-cA+1;
+  if(H<3 || W<5){ drawRect(g, r0,c0,r1,c1); return; }
+  const slash = useUnicode ? '╱' : '/';
+  const back  = useUnicode ? '╲' : '\\';
+  const topL  = useUnicode ? '‾' : '_';   // top horizontal — line at TOP of cell
+  const botL  = '_';                       // bottom horizontal — line at BOTTOM of cell
+  const vert  = useUnicode ? '│' : '|';
+  let slant = Math.min(Math.floor(H/2), Math.floor((W-2)/2));
+  if(slant < 1){ drawRect(g, r0,c0,r1,c1); return; }
+  const middle = H - 2*slant;
+
+  // Upper slants
+  for(let i=0;i<slant;i++){
+    const r = rA + i;
+    const indent = slant - 1 - i;
+    const left  = cA + indent;
+    const right = cB - indent;
+    if(i === 0){
+      setCell(g, r, left, slash);
+      for(let c=left+1;c<right;c++) setCell(g, r, c, topL);
+      setCell(g, r, right, back);
+    } else {
+      setCell(g, r, left, slash);
+      setCell(g, r, right, back);
+    }
+  }
+  // Middle vertical sides
+  for(let i=0;i<middle;i++){
+    const r = rA + slant + i;
+    setCell(g, r, cA, vert);
+    setCell(g, r, cB, vert);
+  }
+  // Lower slants
+  for(let i=0;i<slant;i++){
+    const r = rA + slant + middle + i;
+    const indent = i;
+    const left  = cA + indent;
+    const right = cB - indent;
+    if(i === slant - 1){
+      setCell(g, r, left, back);
+      for(let c=left+1;c<right;c++) setCell(g, r, c, botL);
+      setCell(g, r, right, slash);
+    } else {
+      setCell(g, r, left, back);
+      setCell(g, r, right, slash);
+    }
+  }
+}
+
+function drawEllipse(g, r0,c0,r1,c1){
+  // Always a rounded rectangle. Rounded corners ╭╮╰╯ pair perfectly with
+  // ─ and │ at middle-Y / middle-X — every junction is pixel-aligned.
+  // Trade-off: less "round" than a true ellipse, but ASCII can't render
+  // diagonal-to-flat joins without sub-cell artifacts, so we stay clean.
+  const rA=Math.min(r0,r1), rB=Math.max(r0,r1);
+  const cA=Math.min(c0,c1), cB=Math.max(c0,c1);
+  const H = rB-rA+1, W = cB-cA+1;
+  if(H<3 || W<3){ drawRect(g, r0,c0,r1,c1); return; }
+  const C = CH();
+  const dash = C.h;
+  const vert = C.v;
+  const tl = useUnicode ? '╭' : '.';
+  const tr = useUnicode ? '╮' : '.';
+  const bl = useUnicode ? '╰' : "'";
+  const br = useUnicode ? '╯' : "'";
+
+  setCell(g, rA, cA, tl);
+  for(let c=cA+1;c<cB;c++) setCell(g, rA, c, dash);
+  setCell(g, rA, cB, tr);
+  for(let r=rA+1;r<rB;r++){
+    setCell(g, r, cA, vert);
+    setCell(g, r, cB, vert);
+  }
+  setCell(g, rB, cA, bl);
+  for(let c=cA+1;c<cB;c++) setCell(g, rB, c, dash);
+  setCell(g, rB, cB, br);
+}
+
+function drawShape(g, r0,c0,r1,c1){
+  switch(tool){
+    case 'line':    drawLineCells(g, r0,c0,r1,c1); break;
+    case 'arrow':   drawArrow(g, r0,c0,r1,c1); break;
+    case 'rect':    drawRect(g, r0,c0,r1,c1); break;
+    case 'diamond': drawDiamond(g, r0,c0,r1,c1); break;
+    case 'ellipse': drawEllipse(g, r0,c0,r1,c1); break;
+  }
+}
+
+// ---------- selection / clipboard ----------
+function gridToText(g){
+  return g.map(row=>row.filter(ch=>ch!==TAIL).join('').replace(/ +$/,'')).join('\n');
+}
+function selectionText(){
+  if(!selection) return gridToText(grid);
+  const {r0,c0,r1,c1} = norm(selection);
+  let out = '';
+  for(let r=r0;r<=r1;r++){
+    for(let c=c0;c<=c1;c++){
+      const ch = grid[r][c];
+      if(ch !== TAIL) out += ch;
+    }
+    out += '\n';
+  }
+  return out.replace(/\n$/,'');
+}
+function deleteSelection(){
+  if(!selection) return;
+  pushHistory();
+  const {r0,c0,r1,c1} = norm(selection);
+  for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){
+    grid[r][c]=' ';
+    colorGrid[r][c]=null;
+  }
+  selection = null;
+  render();
+}
+function pasteText(text){
+  const lines = text.replace(/\r\n/g,'\n').split('\n');
+  const r0 = textCursor ? textCursor.r : (selection?norm(selection).r0:0);
+  const c0 = textCursor ? textCursor.c : (selection?norm(selection).c0:0);
+  pushHistory();
+  // Expand full-width chars in the same way as loadText
+  for(let i=0;i<lines.length;i++){
+    let cellOff = 0;
+    for(const ch of lines[i]){
+      const r = r0+i, c = c0+cellOff;
+      if(inBounds(r,c)){
+        if(ch !== ' '){
+          grid[r][c] = ch;
+          colorGrid[r][c] = null;
+          if(isFullWidth(ch) && inBounds(r,c+1)){
+            grid[r][c+1] = TAIL;
+            colorGrid[r][c+1] = null;
+          }
+        }
+      }
+      cellOff += isFullWidth(ch) ? 2 : 1;
+    }
+  }
+  render();
+}
+
+// Internal clipboard (preserves chars + colors)
+function copyToInternalClipboard(){
+  if(!selection) return false;
+  const o = norm(selection);
+  const data = [], colors = [];
+  for(let r=o.r0;r<=o.r1;r++){
+    const row = [], crow = [];
+    for(let c=o.c0;c<=o.c1;c++){
+      row.push(grid[r][c]);
+      crow.push(colorGrid[r] ? colorGrid[r][c] : null);
+    }
+    data.push(row); colors.push(crow);
+  }
+  internalClipboard = {data, colors, h:o.r1-o.r0+1, w:o.c1-o.c0+1};
+  return true;
+}
+function pasteInternalClipboard(r0, c0){
+  if(!internalClipboard) return false;
+  pushHistory();
+  const {data, colors, h, w} = internalClipboard;
+  for(let i=0;i<h;i++){
+    for(let j=0;j<w;j++){
+      const ch = data[i][j];
+      if(ch === ' ' || ch === undefined) continue;
+      const nr = r0+i, nc = c0+j;
+      if(!inBounds(nr,nc)) continue;
+      grid[nr][nc] = ch;
+      colorGrid[nr][nc] = colors[i][j];
+    }
+  }
+  selection = {r0, c0, r1:r0+h-1, c1:c0+w-1};
+  textCursor = null;
+  render();
+  return true;
+}
+
+// ---------- rendering ----------
+function render(){
+  const W = COLS*CELL_W;
+  const H = ROWS*CELL_H;
+  if(canvas.width!==W) canvas.width = W;
+  if(canvas.height!==H) canvas.height = H;
+  ctx.fillStyle = exportMode ? '#FFFFFF' : '#FBF7EE';
+  ctx.fillRect(0,0,W,H);
+  if(showGrid && !exportMode){
+    ctx.strokeStyle = '#EAE2D2';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(let c=0;c<=COLS;c++){ ctx.moveTo(c*CELL_W+0.5,0); ctx.lineTo(c*CELL_W+0.5,H); }
+    for(let r=0;r<=ROWS;r++){ ctx.moveTo(0,r*CELL_H+0.5); ctx.lineTo(W,r*CELL_H+0.5); }
+    ctx.stroke();
+  }
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  let lastBold = null;
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const pv = preview ? preview[r][c] : ' ';
+      const base = grid[r][c];
+      const display = pv!==' ' ? pv : base;
+      if(display===' ' || display===TAIL) continue;
+      // Color priority: preview overlay > assigned region color > default ink
+      let color;
+      if(pv!==' '){
+        color = exportMode ? '#1A1A1A' : '#C8633D';
+      } else {
+        const assigned = colorGrid[r] && colorGrid[r][c];
+        color = assigned || (exportMode ? '#1A1A1A' : '#2D2A26');
+      }
+      ctx.fillStyle = color;
+      const bold = !!(boldGrid[r] && boldGrid[r][c]);
+      if(bold !== lastBold){
+        ctx.font = bold ? ('bold ' + FONT) : FONT;
+        lastBold = bold;
+      }
+      if(isFullWidth(display)){
+        ctx.fillText(display, c*CELL_W + CELL_W, r*CELL_H + CELL_H/2);
+      } else {
+        ctx.fillText(display, c*CELL_W + CELL_W/2, r*CELL_H + CELL_H/2);
+      }
+    }
+  }
+  if(selection){
+    const {r0,c0,r1,c1} = norm(selection);
+    ctx.fillStyle = 'rgba(217, 119, 87, 0.12)';
+    ctx.fillRect(c0*CELL_W, r0*CELL_H, (c1-c0+1)*CELL_W, (r1-r0+1)*CELL_H);
+    ctx.strokeStyle = '#C5705F';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4,3]);
+    ctx.strokeRect(c0*CELL_W+0.5, r0*CELL_H+0.5, (c1-c0+1)*CELL_W-1, (r1-r0+1)*CELL_H-1);
+    ctx.setLineDash([]);
+  }
+  if(textCursor && tool==='text' && blinkOn){
+    const {r,c} = textCursor;
+    ctx.fillStyle = '#D97757';
+    ctx.fillRect(c*CELL_W, r*CELL_H, 2, CELL_H);
+  }
+  // sync UI for selection-aware controls
+  const grp = document.getElementById('shiftGroup');
+  if(grp){
+    if(selection) grp.classList.add('has-selection');
+    else grp.classList.remove('has-selection');
+  }
+  const editBtn = document.getElementById('aiEditBtn');
+  if(editBtn){
+    if(selection){
+      editBtn.textContent = '📝 選択範囲のみ修正';
+      editBtn.title = '選択範囲だけを指示通りに変更 (Ctrl+Enter)';
+    } else {
+      editBtn.textContent = '📝 修正';
+      editBtn.title = '現在の図を元に修正 (Ctrl+Enter)';
+    }
+  }
+}
+
+// ---------- mouse ----------
+function evtCell(e){
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  return {
+    r: Math.max(0, Math.min(ROWS-1, Math.floor(y/CELL_H))),
+    c: Math.max(0, Math.min(COLS-1, Math.floor(x/CELL_W)))
+  };
+}
+
+canvas.addEventListener('mousedown', e=>{
+  e.preventDefault();
+  const {r,c} = evtCell(e);
+  if(tool==='text'){
+    textCursor = {r,c};
+    blinkOn = true;
+    render();
+    return;
+  }
+  if(tool==='select'){
+    if(selection){
+      const n = norm(selection);
+      if(r>=n.r0 && r<=n.r1 && c>=n.c0 && c<=n.c1){
+        drag = {mode:'move', startR:r, startC:c, origSel:{...selection},
+                snapshot:cloneGrid(grid), colorSnapshot:cloneGrid(colorGrid), pushed:false};
+        return;
+      }
+    }
+    drag = {mode:'select', r0:r, c0:c};
+    selection = {r0:r,c0:c,r1:r,c1:c};
+    render();
+    return;
+  }
+  if(tool==='pen' || tool==='erase'){
+    pushHistory();
+    drag = {mode:'paint'};
+    paintAt(r,c);
+    render();
+    return;
+  }
+  // shape tools
+  drag = {mode:'shape', r0:r, c0:c};
+  preview = makeGrid(ROWS,COLS);
+  drawShape(preview, r,c, r,c);
+  render();
+});
+
+canvas.addEventListener('mousemove', e=>{
+  const {r,c} = evtCell(e);
+  document.getElementById('status').textContent = `行 ${r+1}, 列 ${c+1}`;
+  if(!drag) return;
+  if(drag.mode==='paint'){
+    paintAt(r,c);
+    render();
+  } else if(drag.mode==='shape'){
+    preview = makeGrid(ROWS,COLS);
+    drawShape(preview, drag.r0, drag.c0, r, c);
+    render();
+  } else if(drag.mode==='select'){
+    selection = {r0:drag.r0,c0:drag.c0,r1:r,c1:c};
+    render();
+  } else if(drag.mode==='move'){
+    if(!drag.pushed){
+      history.push({g:drag.snapshot, c:drag.colorSnapshot});
+      if(history.length>HISTORY_MAX) history.shift();
+      future.length = 0;
+      updateButtons();
+      drag.pushed = true;
+    }
+    const dr = r-drag.startR, dc = c-drag.startC;
+    grid = cloneGrid(drag.snapshot);
+    colorGrid = cloneGrid(drag.colorSnapshot);
+    const o = norm(drag.origSel);
+    const data = [], colors = [];
+    for(let i=o.r0;i<=o.r1;i++){
+      data.push(drag.snapshot[i].slice(o.c0,o.c1+1));
+      colors.push(drag.colorSnapshot[i].slice(o.c0,o.c1+1));
+    }
+    for(let i=o.r0;i<=o.r1;i++) for(let j=o.c0;j<=o.c1;j++){
+      grid[i][j]=' ';
+      colorGrid[i][j]=null;
+    }
+    for(let i=0;i<data.length;i++){
+      for(let j=0;j<data[i].length;j++){
+        const nr=o.r0+i+dr, nc=o.c0+j+dc;
+        if(inBounds(nr,nc) && data[i][j]!==' '){
+          grid[nr][nc]=data[i][j];
+          colorGrid[nr][nc]=colors[i][j];
+        }
+      }
+    }
+    selection = {r0:o.r0+dr, c0:o.c0+dc, r1:o.r1+dr, c1:o.c1+dc};
+    render();
+  }
+});
+
+window.addEventListener('mouseup', ()=>{
+  if(!drag) return;
+  if(drag.mode==='shape'){
+    pushHistory();
+    drawShape(grid, drag.r0, drag.c0, drag.r1 ?? drag.r0, drag.c1 ?? drag.c0);
+    // Fallback: re-derive from preview
+    if(preview){
+      for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+        if(preview[r][c]!==' ') grid[r][c] = preview[r][c];
+      }
+    }
+    preview = null;
+  }
+  drag = null;
+  render();
+});
+
+function paintAt(r,c){
+  const target = tool==='erase' ? ' ' : CH().pen;
+  setCell(grid, r, c, target);
+  if(inBounds(r,c)) colorGrid[r][c] = null;
+}
+
+// ---------- keyboard ----------
+window.addEventListener('keydown', e=>{
+  if(e.target.tagName==='TEXTAREA') return;
+  if(e.target.tagName==='INPUT' && e.target.type!=='checkbox') return;
+  // ignore while a modal dialog is open
+  if(document.querySelector('.modal-overlay')) return;
+
+  const ctrl = e.ctrlKey || e.metaKey;
+
+  if(ctrl && e.key.toLowerCase()==='z' && !e.shiftKey){ e.preventDefault(); undo(); return; }
+  if(ctrl && (e.key.toLowerCase()==='y' || (e.shiftKey && e.key.toLowerCase()==='z'))){ e.preventDefault(); redo(); return; }
+  if(ctrl && e.key.toLowerCase()==='c'){
+    if(selection){
+      copyToInternalClipboard();
+      navigator.clipboard.writeText(selectionText()).catch(()=>{});
+      flash('コピー (色情報も保持)');
+    } else {
+      navigator.clipboard.writeText(selectionText()).then(()=>flash('全体コピー')).catch(()=>{});
+    }
+    e.preventDefault(); return;
+  }
+  if(ctrl && e.key.toLowerCase()==='x'){
+    if(selection){
+      copyToInternalClipboard();
+      navigator.clipboard.writeText(selectionText()).catch(()=>{});
+      deleteSelection();
+      flash('カット');
+    }
+    e.preventDefault(); return;
+  }
+  if(ctrl && e.key.toLowerCase()==='v'){
+    // Determine paste target: textCursor > selection top-left > (0,0)
+    let r0, c0;
+    if(textCursor){ r0=textCursor.r; c0=textCursor.c; }
+    else if(selection){ const n=norm(selection); r0=n.r0; c0=n.c0; }
+    else { r0=0; c0=0; }
+    if(internalClipboard){
+      pasteInternalClipboard(r0, c0);
+      flash('ペースト (色付き)');
+    } else {
+      navigator.clipboard.readText().then(t=>pasteText(t)).catch(()=>flash('ペースト失敗'));
+    }
+    e.preventDefault(); return;
+  }
+  if(ctrl && e.key.toLowerCase()==='a'){
+    selection = {r0:0,c0:0,r1:ROWS-1,c1:COLS-1};
+    render(); e.preventDefault(); return;
+  }
+
+  if(e.key==='Escape'){ selection=null; textCursor=null; preview=null; drag=null; render(); return; }
+
+  if(e.key==='Delete'){
+    if(selection){ deleteSelection(); e.preventDefault(); return; }
+  }
+  if(e.key==='Backspace' && tool==='text' && textCursor){
+    pushHistory();
+    textCursor.c = Math.max(0, textCursor.c-1);
+    setCell(grid, textCursor.r, textCursor.c, ' ');
+    blinkOn = true;
+    render(); e.preventDefault(); return;
+  }
+  if(e.key==='Backspace' && selection){ deleteSelection(); e.preventDefault(); return; }
+
+  // Tool shortcuts (skip if actively typing into canvas)
+  if(!(tool==='text' && textCursor) && !ctrl && !e.altKey){
+    const map = {v:'select',p:'pen',e:'erase',t:'text',l:'line',w:'arrow',r:'rect',d:'diamond',o:'ellipse'};
+    const k = e.key.toLowerCase();
+    if(map[k] && e.key.length===1){
+      setTool(map[k]);
+      e.preventDefault();
+      return;
+    }
+  }
+
+  // Text typing
+  if(tool==='text' && textCursor){
+    if(e.key==='ArrowLeft'){ textCursor.c=Math.max(0,textCursor.c-1); blinkOn=true; render(); e.preventDefault(); return; }
+    if(e.key==='ArrowRight'){ textCursor.c=Math.min(COLS-1,textCursor.c+1); blinkOn=true; render(); e.preventDefault(); return; }
+    if(e.key==='ArrowUp'){ textCursor.r=Math.max(0,textCursor.r-1); blinkOn=true; render(); e.preventDefault(); return; }
+    if(e.key==='ArrowDown'){ textCursor.r=Math.min(ROWS-1,textCursor.r+1); blinkOn=true; render(); e.preventDefault(); return; }
+    if(e.key==='Enter'){
+      textCursor.r = Math.min(ROWS-1, textCursor.r+1);
+      blinkOn = true; render(); e.preventDefault(); return;
+    }
+    if(e.key.length===1 && !ctrl && !e.altKey){
+      pushHistory();
+      if(isFullWidth(e.key)){
+        setCell(grid, textCursor.r, textCursor.c, e.key);
+        setCell(grid, textCursor.r, textCursor.c+1, TAIL);
+        textCursor.c = Math.min(COLS-1, textCursor.c+2);
+      } else {
+        setCell(grid, textCursor.r, textCursor.c, e.key);
+        textCursor.c = Math.min(COLS-1, textCursor.c+1);
+      }
+      blinkOn = true;
+      render(); e.preventDefault();
+      return;
+    }
+  }
+
+  // Move selection with arrow keys (Shift+arrow = 4 cells)
+  if(selection && tool==='select' && e.key.startsWith('Arrow')){
+    const m = {ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[e.key];
+    if(m){
+      const n = e.shiftKey ? 4 : 1;
+      shiftSelectionBy(m[0]*n, m[1]*n);
+      e.preventDefault();
+    }
+  }
+});
+
+// ---------- toolbar ----------
+function setTool(t){
+  tool = t;
+  document.querySelectorAll('#toolGroup button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.tool===t);
+  });
+  if(t!=='text') textCursor=null;
+  if(t!=='select') selection=null;
+  canvas.style.cursor = (t==='text')?'text':(t==='select')?'default':'crosshair';
+  render();
+}
+
+document.querySelectorAll('#toolGroup button').forEach(b=>{
+  b.addEventListener('click', ()=>setTool(b.dataset.tool));
+});
+document.getElementById('undoBtn').addEventListener('click', undo);
+document.getElementById('redoBtn').addEventListener('click', redo);
+document.getElementById('unicodeChk').addEventListener('change', e=>{ useUnicode=e.target.checked; render(); });
+document.getElementById('gridChk').addEventListener('change', e=>{ showGrid=e.target.checked; render(); });
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  if(confirm('全消去します。よろしいですか？')){
+    pushHistory();
+    grid = makeGrid(ROWS,COLS);
+    colorGrid = makeColorGrid(ROWS,COLS);
+    boldGrid = makeBoldGrid(ROWS,COLS);
+    selection=null; textCursor=null;
+    render();
+  }
+});
+document.getElementById('resizeBtn').addEventListener('click', ()=>{
+  const c = +document.getElementById('cols').value;
+  const r = +document.getElementById('rows').value;
+  if(!c||!r||c<5||r<5) return;
+  pushHistory();
+  const ng = makeGrid(r,c);
+  const ncg = makeColorGrid(r,c);
+  const nbg = makeBoldGrid(r,c);
+  for(let i=0;i<Math.min(r,ROWS);i++) for(let j=0;j<Math.min(c,COLS);j++){
+    ng[i][j]=grid[i][j];
+    ncg[i][j]=colorGrid[i] ? colorGrid[i][j] : null;
+    nbg[i][j]=boldGrid[i] ? boldGrid[i][j] : false;
+  }
+  grid = ng; colorGrid = ncg; boldGrid = nbg; ROWS=r; COLS=c;
+  selection=null; textCursor=null;
+  render();
+});
+document.getElementById('copyBtn').addEventListener('click', async ()=>{
+  const text = selectionText();
+  if(selection) copyToInternalClipboard();
+  try{ await navigator.clipboard.writeText(text); flash(selection ? 'コピー (色付き)' : '全体コピー'); }
+  catch{ prompt('Ctrl+C で手動コピー:', text); }
+});
+document.getElementById('txtBtn').addEventListener('click', ()=>{
+  const text = gridToText(grid);
+  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `ascii-draw-${Date.now()}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById('pngBtn').addEventListener('click', ()=>{
+  // Render to a 3x-DPI offscreen canvas, trimmed to content with a margin.
+  // White background, color preservation, no grid lines.
+  const SCALE = 3;
+  const MARGIN = 2;
+
+  // Find content bounding box
+  let minR=ROWS, maxR=-1, minC=COLS, maxC=-1;
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const ch = grid[r][c];
+      if(ch !== ' ' && ch !== TAIL){
+        if(r<minR) minR=r;
+        if(r>maxR) maxR=r;
+        if(c<minC) minC=c;
+        if(c>maxC) maxC=c;
+      }
+    }
+  }
+  if(maxR < 0){ flash('描画内容がありません'); return; }
+
+  const r0 = Math.max(0, minR-MARGIN);
+  const r1 = Math.min(ROWS-1, maxR+MARGIN);
+  const c0 = Math.max(0, minC-MARGIN);
+  const c1 = Math.min(COLS-1, maxC+MARGIN);
+  const w = c1-c0+1, h = r1-r0+1;
+
+  const off = document.createElement('canvas');
+  off.width  = w * CELL_W * SCALE;
+  off.height = h * CELL_H * SCALE;
+  const octx = off.getContext('2d');
+  octx.scale(SCALE, SCALE);
+
+  // Pure white background for PPT/Keynote
+  octx.fillStyle = '#FFFFFF';
+  octx.fillRect(0, 0, w*CELL_W, h*CELL_H);
+
+  octx.textBaseline = 'middle';
+  octx.textAlign = 'center';
+  octx.imageSmoothingEnabled = true;
+  octx.imageSmoothingQuality = 'high';
+
+  let lastBoldExp = null;
+  for(let r=r0; r<=r1; r++){
+    for(let c=c0; c<=c1; c++){
+      const ch = grid[r][c];
+      if(ch === ' ' || ch === TAIL) continue;
+      const color = (colorGrid[r] && colorGrid[r][c]) || '#1A1A1A';
+      const bold = !!(boldGrid[r] && boldGrid[r][c]);
+      if(bold !== lastBoldExp){
+        octx.font = bold ? ('bold ' + FONT) : FONT;
+        lastBoldExp = bold;
+      }
+      octx.fillStyle = color;
+      const lr = r - r0;
+      const lc = c - c0;
+      const cx = isFullWidth(ch) ? lc*CELL_W + CELL_W : lc*CELL_W + CELL_W/2;
+      const cy = lr*CELL_H + CELL_H/2;
+      octx.fillText(ch, cx, cy);
+    }
+  }
+
+  off.toBlob(blob=>{
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `ascii-draw-${Date.now()}.png`;
+    a.click();
+    URL.revokeObjectURL(url);
+    flash(`PNG ${off.width}×${off.height}px (${SCALE}x) 保存`);
+  }, 'image/png');
+});
+
+// ---------- Selection shift (manual alignment fix) ----------
+function shiftSelectionBy(dr, dc){
+  if(!selection){ flash('先に選択ツールで範囲を選んでください'); return; }
+  pushHistory();
+  const o = norm(selection);
+  const data = [], colors = [];
+  for(let i=o.r0;i<=o.r1;i++){
+    data.push(grid[i].slice(o.c0,o.c1+1));
+    colors.push(colorGrid[i].slice(o.c0,o.c1+1));
+  }
+  for(let i=o.r0;i<=o.r1;i++) for(let j=o.c0;j<=o.c1;j++){
+    grid[i][j]=' ';
+    colorGrid[i][j]=null;
+  }
+  for(let i=0;i<data.length;i++){
+    for(let j=0;j<data[i].length;j++){
+      const nr=o.r0+i+dr, nc=o.c0+j+dc;
+      if(inBounds(nr,nc) && data[i][j]!==' '){
+        grid[nr][nc]=data[i][j];
+        colorGrid[nr][nc]=colors[i][j];
+      }
+    }
+  }
+  selection = {r0:o.r0+dr, c0:o.c0+dc, r1:o.r1+dr, c1:o.c1+dc};
+  render();
+  updateShiftUI();
+}
+function updateShiftUI(){
+  const grp = document.getElementById('shiftGroup');
+  if(selection) grp.classList.add('has-selection');
+  else grp.classList.remove('has-selection');
+}
+function shiftAmount(e){ return e.shiftKey ? 4 : 1; }
+document.getElementById('shiftL').addEventListener('click', e=>shiftSelectionBy(0, -shiftAmount(e)));
+document.getElementById('shiftR').addEventListener('click', e=>shiftSelectionBy(0,  shiftAmount(e)));
+document.getElementById('shiftU').addEventListener('click', e=>shiftSelectionBy(-shiftAmount(e), 0));
+document.getElementById('shiftD').addEventListener('click', e=>shiftSelectionBy( shiftAmount(e), 0));
+
+function flash(msg){
+  const s = document.getElementById('status');
+  const orig = s.textContent;
+  s.textContent = '✓ '+msg;
+  s.style.color = 'var(--good)';
+  setTimeout(()=>{ s.textContent = orig; s.style.color=''; }, 1100);
+}
+
+// blink
+setInterval(()=>{
+  if(textCursor && tool==='text'){ blinkOn = !blinkOn; render(); }
+}, 500);
+
+// ---------- Load text into grid ----------
+function loadText(text, colormap, weightmap){
+  const lines = text.replace(/\r\n/g,'\n').split('\n');
+  // strip trailing empty lines
+  while(lines.length>1 && !lines[lines.length-1].trim()) lines.pop();
+  const cmLines = (typeof colormap === 'string' && colormap)
+    ? colormap.replace(/\r\n/g,'\n').split('\n')
+    : null;
+  const wmLines = (typeof weightmap === 'string' && weightmap)
+    ? weightmap.replace(/\r\n/g,'\n').split('\n')
+    : null;
+
+  // Expand each line in parallel: full-width chars become [char, TAIL] pairs.
+  const expanded = [], expandedColors = [], expandedBolds = [];
+  for(let i=0;i<lines.length;i++){
+    const ln = lines[i];
+    const cm = (cmLines && cmLines[i]) || '';
+    const wm = (wmLines && wmLines[i]) || '';
+    const cells = [], cellColors = [], cellBolds = [];
+    for(let j=0;j<ln.length;j++){
+      const ch = ln[j];
+      const color = colorFromCode(cm[j]);
+      const bold = wm[j] === 'B' || wm[j] === 'b';
+      cells.push(ch); cellColors.push(color); cellBolds.push(bold);
+      if(isFullWidth(ch)){
+        cells.push(TAIL);
+        cellColors.push(color);
+        cellBolds.push(bold);
+      }
+    }
+    expanded.push(cells);
+    expandedColors.push(cellColors);
+    expandedBolds.push(cellBolds);
+  }
+
+  const needRows = expanded.length;
+  let needCols = 0;
+  for(const arr of expanded){
+    if(arr.length > needCols) needCols = arr.length;
+  }
+  pushHistory();
+  // Make the canvas comfortably wide so the diagram doesn't look cramped.
+  // Diagram is then centered within the canvas.
+  const MIN_COLS = 140; // ~1260 px at CELL_W 9
+  const MIN_ROWS = 32;
+  const MARGIN_V = 2;
+  const MARGIN_H = 4;
+  ROWS = Math.max(MIN_ROWS, needRows + MARGIN_V * 2);
+  COLS = Math.max(MIN_COLS, needCols + MARGIN_H * 2);
+  document.getElementById('cols').value = COLS;
+  document.getElementById('rows').value = ROWS;
+
+  // Center diagram horizontally (and vertically) within the canvas.
+  const leftPad = Math.floor((COLS - needCols) / 2);
+  const topPad  = Math.floor((ROWS - needRows) / 2);
+
+  grid = makeGrid(ROWS, COLS);
+  colorGrid = makeColorGrid(ROWS, COLS);
+  boldGrid = makeBoldGrid(ROWS, COLS);
+  for(let i=0;i<expanded.length;i++){
+    const arr = expanded[i];
+    const carr = expandedColors[i];
+    const barr = expandedBolds[i];
+    const r = i + topPad;
+    if(r < 0 || r >= ROWS) continue;
+    for(let j=0;j<arr.length;j++){
+      const c = j + leftPad;
+      if(c < 0 || c >= COLS) continue;
+      grid[r][c] = arr[j];
+      colorGrid[r][c] = carr[j];
+      boldGrid[r][c] = barr[j];
+    }
+  }
+  selection = null; textCursor = null; preview = null;
+  render();
+}
+
+// ---------- AI generation (browser ⇄ local server ⇄ claude CLI) ----------
+async function callClaude(mode){
+  const promptEl = document.getElementById('aiPrompt');
+  const prompt = promptEl.value.trim();
+  if(!prompt){ flash('プロンプトを入力'); promptEl.focus(); return; }
+  const status = document.getElementById('aiStatus');
+  const genBtn = document.getElementById('aiGenBtn');
+  const editBtn = document.getElementById('aiEditBtn');
+
+  // Selection-aware edit dispatch
+  let effectiveMode = mode;
+  const body = {prompt};
+  if(mode === 'edit'){
+    if(selection){
+      effectiveMode = 'edit-selection';
+      const o = norm(selection);
+      const selText = selectionText();
+      let visualW = 0;
+      for(const ln of selText.split('\n')){
+        let w = 0;
+        for(const ch of ln){
+          if(ch === TAIL) continue;
+          w += isFullWidth(ch) ? 2 : 1;
+        }
+        if(w > visualW) visualW = w;
+      }
+      body.selection = {
+        text: selText,
+        r0: o.r0, c0: o.c0, r1: o.r1, c1: o.c1,
+        width: visualW,
+        height: o.r1 - o.r0 + 1
+      };
+    } else {
+      body.current = gridToText(grid);
+    }
+  }
+  body.mode = effectiveMode;
+
+  genBtn.disabled = true; editBtn.disabled = true; promptEl.disabled = true;
+  status.className = 'busy';
+  status.innerHTML = effectiveMode === 'edit-selection'
+    ? '<span class="spinner"></span>選択範囲を修正中... (10〜60秒)'
+    : '<span class="spinner"></span>Claude Codeに依頼中... (最大15分)';
+
+  try{
+    const resp = await fetch('/generate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const data = await resp.json();
+    if(!resp.ok || !data.ok) throw new Error(data.error || `HTTP ${resp.status}`);
+    if(!data.art || !data.art.trim()) throw new Error('空の応答');
+
+    if(data.patch_only && body.selection){
+      patchSelection(data.art, body.selection);
+      status.className = 'ok';
+      status.textContent = '✓ 選択範囲を更新';
+    } else {
+      loadText(data.art, data.colormap || '', data.weightmap || '');
+      status.className = 'ok';
+      const lc = data.art.split('\n').length;
+      const colored = data.colormap ? '色付き' : '無色';
+      status.textContent = `✓ 完了 (${lc}行, ${colored})`;
+    }
+    setTimeout(()=>{
+      if(status.classList.contains('ok')){ status.textContent=''; status.className=''; }
+    }, 3500);
+    if(mode === 'create') promptEl.value = '';
+    else if(effectiveMode === 'edit-selection') promptEl.value = '';
+  }catch(e){
+    status.className = 'err';
+    status.textContent = '✗ ' + e.message;
+    console.error(e);
+  }finally{
+    genBtn.disabled = false; editBtn.disabled = false; promptEl.disabled = false;
+    promptEl.focus();
+  }
+}
+
+// Patch a piece of ASCII art into the selection area, replacing existing content
+function patchSelection(art, sel){
+  pushHistory();
+  // Clear original selection cells
+  for(let r=sel.r0; r<=sel.r1; r++){
+    for(let c=sel.c0; c<=sel.c1; c++){
+      if(inBounds(r,c)){
+        grid[r][c] = ' ';
+        colorGrid[r][c] = null;
+        boldGrid[r][c] = false;
+      }
+    }
+  }
+  // Place new content top-left at (sel.r0, sel.c0), expanding full-width chars
+  const lines = art.replace(/\r\n/g, '\n').split('\n');
+  while(lines.length>1 && !lines[lines.length-1].trim()) lines.pop();
+  let maxR = sel.r0, maxC = sel.c0;
+  for(let i=0;i<lines.length;i++){
+    const ln = lines[i];
+    let cellOff = 0;
+    for(const ch of ln){
+      const r = sel.r0 + i;
+      const c = sel.c0 + cellOff;
+      if(r >= 0 && r < ROWS && c >= 0 && c < COLS && ch !== ' '){
+        grid[r][c] = ch;
+        colorGrid[r][c] = null;
+        boldGrid[r][c] = false;
+        if(isFullWidth(ch) && c+1 < COLS){
+          grid[r][c+1] = TAIL;
+          colorGrid[r][c+1] = null;
+          boldGrid[r][c+1] = false;
+        }
+        if(r > maxR) maxR = r;
+        if(c + (isFullWidth(ch)?1:0) > maxC) maxC = c + (isFullWidth(ch)?1:0);
+      }
+      cellOff += isFullWidth(ch) ? 2 : 1;
+    }
+  }
+  // Refresh selection to the new content area
+  selection = {r0:sel.r0, c0:sel.c0, r1:Math.max(sel.r1, maxR), c1:Math.max(sel.c1, maxC)};
+  textCursor = null;
+  render();
+}
+
+document.getElementById('aiGenBtn').addEventListener('click', ()=>callClaude('create'));
+document.getElementById('aiEditBtn').addEventListener('click', ()=>callClaude('edit'));
+document.getElementById('aiPrompt').addEventListener('keydown', e=>{
+  if(e.key==='Enter'){
+    e.preventDefault();
+    callClaude((e.ctrlKey||e.metaKey) ? 'edit' : 'create');
+  }
+});
+
+document.getElementById('loadBtn').addEventListener('click', ()=>{
+  const m = document.createElement('div');
+  m.className = 'modal-overlay';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(45,42,38,0.5);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:1000';
+  m.innerHTML = `
+    <div style="background:#FBF7EE;padding:20px;border-radius:10px;width:640px;max-width:92vw;box-shadow:0 10px 40px rgba(45,42,38,0.25);border:1px solid #D4CCBE">
+      <h3 style="margin:0 0 10px;color:#2D2A26;font:600 15px -apple-system,system-ui,sans-serif">テキストを貼り付け</h3>
+      <textarea id="loadTA" style="width:100%;height:340px;background:#FFFFFF;color:#2D2A26;border:1px solid #D4CCBE;border-radius:6px;padding:10px;font:13px ui-monospace,monospace;resize:vertical;outline:none" placeholder="ここにASCIIアートを貼り付け..."></textarea>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+        <button id="loadCancel" style="background:#F4EFE3;color:#3D3A36;border:1px solid #D4CCBE;padding:8px 18px;border-radius:6px;cursor:pointer;font:500 13px -apple-system,system-ui,sans-serif">キャンセル</button>
+        <button id="loadOK" style="background:#D97757;color:#FBF7EE;border:0;padding:8px 18px;border-radius:6px;cursor:pointer;font:600 13px -apple-system,system-ui,sans-serif;box-shadow:0 1px 2px rgba(217,119,87,0.3)">読込</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+  const ta = m.querySelector('#loadTA');
+  ta.focus();
+  m.querySelector('#loadCancel').onclick = ()=>m.remove();
+  m.querySelector('#loadOK').onclick = ()=>{
+    loadText(ta.value);
+    m.remove();
+    flash('読み込みました');
+  };
+  m.addEventListener('click', e=>{ if(e.target===m) m.remove(); });
+});
+
+// ---------- Help modal ----------
+function buildHelpHTML(){
+  return `
+    <div id="helpModal" role="dialog" aria-labelledby="helpTitle" aria-modal="true">
+      <button id="helpClose" aria-label="閉じる" title="閉じる (Esc)">×</button>
+
+      <div class="help-eyebrow">N° 002 &nbsp;·&nbsp; Manual &nbsp;·&nbsp; MMXXVI</div>
+      <h1 id="helpTitle" class="help-title">使い方<em>ガイド</em>.</h1>
+      <p class="help-subtitle">
+        ASCII Draw は Claude Code を裏で呼び出して構成図を生成し、手で微調整できる Windows 用ツールです。
+        まずは <em style="font-style:italic;color:#D97757">「✨ 生成」</em> ボタンから始めてみてください。
+      </p>
+      <div class="help-rule"></div>
+
+      <!-- 1. Quick Start -->
+      <section class="help-section">
+        <h2 class="help-h2"><span class="num">01</span> はじめての方へ</h2>
+        <p class="help-lede">3ステップで PowerPoint 用の構成図が完成します。</p>
+        <div class="help-steps">
+          <div class="help-step">
+            <span class="step-n">1.</span>
+            <div class="step-t">AIに描かせる</div>
+            <div class="step-d">画面上部の入力欄に日本語で指示し <kbd>Enter</kbd> または「✨ 生成」をクリック。</div>
+          </div>
+          <div class="help-step">
+            <span class="step-n">2.</span>
+            <div class="step-t">部分だけ直す</div>
+            <div class="step-d">
+              <kbd>V</kbd>「選択」で<strong style="color:#A05544">直したい箇所だけドラッグ範囲指定</strong> → 入力欄に修正内容を書く → 「📝 選択範囲のみ修正」。<br>
+              <em style="font-style:italic;color:#D97757">他の部分は一切壊れません。</em>
+            </div>
+          </div>
+          <div class="help-step">
+            <span class="step-n">3.</span>
+            <div class="step-t">画像で保存</div>
+            <div class="step-d">「🖼 PNG」で白背景 3× 解像度の画像を保存。そのまま PPT に貼れます。</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Tools -->
+      <section class="help-section">
+        <h2 class="help-h2"><span class="num">02</span> 描画ツール</h2>
+        <p class="help-lede">ツールバー左の <em>「描画」</em> グループ。キーボードショートカットで瞬時に切替。</p>
+        <table class="help-tbl">
+          <thead><tr><th class="icon"></th><th class="key">キー</th><th>機能</th></tr></thead>
+          <tbody>
+            <tr><td class="icon">⬚</td><td class="key"><kbd>V</kbd></td><td class="desc"><strong>選択</strong> — 範囲をドラッグして切り取り・移動・部分修正</td></tr>
+            <tr><td class="icon">✎</td><td class="key"><kbd>P</kbd></td><td class="desc"><strong>ペン</strong> — 1セルずつ自由描画 (■)</td></tr>
+            <tr><td class="icon">⌫</td><td class="key"><kbd>E</kbd></td><td class="desc"><strong>消しゴム</strong> — ドラッグで消去</td></tr>
+            <tr><td class="icon">A</td><td class="key"><kbd>T</kbd></td><td class="desc"><strong>テキスト</strong> — クリック位置から日本語/英字を直接入力</td></tr>
+            <tr><td class="icon">─</td><td class="key"><kbd>L</kbd></td><td class="desc"><strong>直線</strong> — 直角L字に自動補正、罫線として綺麗な交点</td></tr>
+            <tr><td class="icon">→</td><td class="key"><kbd>W</kbd></td><td class="desc"><strong>矢印</strong> — 終点に▲▼◀▶を自動配置</td></tr>
+            <tr><td class="icon">▢</td><td class="key"><kbd>R</kbd></td><td class="desc"><strong>矩形</strong> — Unicode罫線でプロセスや箱を描く</td></tr>
+            <tr><td class="icon">◇</td><td class="key"><kbd>D</kbd></td><td class="desc"><strong>菱形</strong> — 判断分岐、伸縮しても角がガタつかない</td></tr>
+            <tr><td class="icon">▢</td><td class="key"><kbd>O</kbd></td><td class="desc"><strong>角丸長方形</strong> — ╭╮╰╯で角を丸めた箱、楕円代用</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 3. Shortcuts -->
+      <section class="help-section">
+        <h2 class="help-h2"><span class="num">03</span> ショートカット</h2>
+        <div class="help-cols">
+          <table class="help-tbl">
+            <thead><tr><th class="key">操作</th><th>機能</th></tr></thead>
+            <tbody>
+              <tr><td class="key"><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td class="desc">元に戻す</td></tr>
+              <tr><td class="key"><kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td class="desc">やり直し</td></tr>
+              <tr><td class="key"><kbd>Ctrl</kbd>+<kbd>C</kbd></td><td class="desc">コピー (色情報も保持)</td></tr>
+              <tr><td class="key"><kbd>Ctrl</kbd>+<kbd>X</kbd></td><td class="desc">カット</td></tr>
+              <tr><td class="key"><kbd>Ctrl</kbd>+<kbd>V</kbd></td><td class="desc">貼り付け</td></tr>
+              <tr><td class="key"><kbd>Ctrl</kbd>+<kbd>A</kbd></td><td class="desc">全選択</td></tr>
+              <tr><td class="key"><kbd>Esc</kbd></td><td class="desc">選択解除</td></tr>
+              <tr><td class="key"><kbd>Del</kbd></td><td class="desc">選択範囲を削除</td></tr>
+            </tbody>
+          </table>
+          <table class="help-tbl">
+            <thead><tr><th class="key">操作</th><th>機能</th></tr></thead>
+            <tbody>
+              <tr><td class="key"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd></td><td class="desc">選択範囲を 1 セル移動</td></tr>
+              <tr><td class="key"><kbd>Shift</kbd>+矢印</td><td class="desc">選択範囲を 4 セル移動</td></tr>
+              <tr><td class="key"><kbd>Enter</kbd></td><td class="desc">AI で新規生成</td></tr>
+              <tr><td class="key"><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td class="desc">AI で現図を修正</td></tr>
+              <tr><td class="key"><kbd>F1</kbd></td><td class="desc">このヘルプを開く</td></tr>
+              <tr><td class="key"><kbd>?</kbd></td><td class="desc">このヘルプを開く</td></tr>
+              <tr><td class="key"><kbd>BS</kbd></td><td class="desc">選択削除 / 文字削除</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 4. AI Generation -->
+      <section class="help-section">
+        <h2 class="help-h2"><span class="num">04</span> AIに上手く描かせるコツ</h2>
+
+        <!-- Featured spotlight: partial-edit workflow -->
+        <div class="help-spotlight">
+          <div class="help-spotlight-title">
+            <em>選択範囲だけ</em>を、AIにピンポイントで直させる
+          </div>
+          <p class="help-spotlight-lede">
+            全体を作り直さなくても、<strong style="color:#A05544;font-weight:600">気になる箇所だけ範囲指定</strong>すれば AI はそこだけを書き換えます。
+            周りのレイアウトや他のパーツは一切壊れません。これがこのツール最大の特長です。
+          </p>
+          <div class="help-flow">
+            <div class="help-flow-step">
+              <span class="n">STEP 1</span>
+              <span class="t">⬚ 選択ツールに切替</span>
+              <span class="d">描画グループの「⬚ 選択」をクリック、または <kbd>V</kbd> キー。</span>
+            </div>
+            <div class="help-flow-arrow">→</div>
+            <div class="help-flow-step">
+              <span class="n">STEP 2</span>
+              <span class="t">直したい箇所を範囲指定</span>
+              <span class="d">キャンバス上で<strong>修正したい部分だけ</strong>をドラッグして囲む。</span>
+            </div>
+            <div class="help-flow-arrow">→</div>
+            <div class="help-flow-step">
+              <span class="n">STEP 3</span>
+              <span class="t">指示文を入力</span>
+              <span class="d">画面上の入力欄に<code>「DBをPostgreSQLに変えて」</code>のように書く。</span>
+            </div>
+            <div class="help-flow-arrow">→</div>
+            <div class="help-flow-step">
+              <span class="n">STEP 4</span>
+              <span class="t">📝 選択範囲のみ修正</span>
+              <span class="d">範囲選択中はボタンが自動で<strong>「📝 選択範囲のみ修正」</strong>に切替わるのでクリック (<kbd>Ctrl</kbd>+<kbd>Enter</kbd>)。</span>
+            </div>
+          </div>
+          <div class="help-spotlight-tip">
+            <strong>POINT</strong> &nbsp;&nbsp;範囲選択 <em>なし</em> で「📝 修正」を押すと <em>図全体</em> が書き換わります。「選択範囲のみ」モードに入っているかは、ボタンの文字が変わるので一目で確認できます。
+          </div>
+        </div>
+
+        <p class="help-lede">
+          ゼロから生成するときは、指示は<strong>「構成要素」と「矢印で表す関係」</strong>を分けて書くと精度が上がります。
+        </p>
+        <div class="help-prompts">
+          <div class="help-prompt">Webアプリのアーキテクチャ図: フロントエンド React → API Gateway → 3つのマイクロサービス (認証 / 注文 / 通知) → PostgreSQL DB</div>
+          <div class="help-prompt">ユーザー登録フロー: 入力フォーム → バリデーション → DB保存 → 確認メール送信 → 完了画面</div>
+          <div class="help-prompt">データパイプライン: ファイル取込 → ETL処理 → DataLake → BIダッシュボード。途中エラー時は通知サービスへ</div>
+          <div class="help-prompt">CI/CDパイプライン: Push → GitHub Actions → テスト → ビルド → ステージング → 本番デプロイ</div>
+        </div>
+      </section>
+
+      <!-- 5. Color codes -->
+      <section class="help-section">
+        <h2 class="help-h2"><span class="num">05</span> カラーコード</h2>
+        <p class="help-lede">AIは要素の役割に応じて自動で色分けします。意味は以下の通り。</p>
+        <div class="help-colors">
+          <div class="help-color"><span class="swatch" style="background:#3D6FA3"></span><span class="code">B</span><span>UI / クライアント</span></div>
+          <div class="help-color"><span class="swatch" style="background:#2F857F"></span><span class="code">T</span><span>キャッシュ / キュー</span></div>
+          <div class="help-color"><span class="swatch" style="background:#4F8A45"></span><span class="code">G</span><span>成功 / 正常系</span></div>
+          <div class="help-color"><span class="swatch" style="background:#7A8B4F"></span><span class="code">L</span><span>ユーティリティ / 設定</span></div>
+          <div class="help-color"><span class="swatch" style="background:#B8821F"></span><span class="code">M</span><span>DB / データストア</span></div>
+          <div class="help-color"><span class="swatch" style="background:#D17040"></span><span class="code">O</span><span>API / サービス</span></div>
+          <div class="help-color"><span class="swatch" style="background:#A04030"></span><span class="code">R</span><span>エラー / 重要</span></div>
+          <div class="help-color"><span class="swatch" style="background:#8B4F75"></span><span class="code">P</span><span>外部 / 3rd-party</span></div>
+          <div class="help-color"><span class="swatch" style="background:#5C5852"></span><span class="code">N</span><span>注釈 / コメント</span></div>
+        </div>
+      </section>
+
+      <!-- 6. Tips & troubleshooting -->
+      <section class="help-section">
+        <h2 class="help-h2"><span class="num">06</span> 困ったとき</h2>
+        <ul class="help-tips">
+          <li><strong>文字化け / 罫線がガタつく：</strong> 「表示」グループの <kbd style="background:#F4EFE3;border:1px solid #D4CCBE;border-radius:3px;padding:1px 5px;font:500 10.5px 'JetBrains Mono',monospace">Unicode罫線</kbd> をオンに。</li>
+          <li><strong>図がずれている：</strong> <kbd style="background:#F4EFE3;border:1px solid #D4CCBE;border-radius:3px;padding:1px 5px;font:500 10.5px 'JetBrains Mono',monospace">V</kbd> で範囲選択して「選択シフト」◄▲▼► で 1 セル単位の微調整。<kbd style="background:#F4EFE3;border:1px solid #D4CCBE;border-radius:3px;padding:1px 5px;font:500 10.5px 'JetBrains Mono',monospace">Shift</kbd>+クリックで 4 セル移動。</li>
+          <li><strong>AI応答が遅い：</strong> 初回は 30 秒〜1 分が普通。複雑な図だと数分かかります。Claude Code セッションが裏で起動するためです。</li>
+          <li><strong>「タイムアウト」エラーが出る：</strong> プロンプトを短く区切り直すか、<kbd style="background:#F4EFE3;border:1px solid #D4CCBE;border-radius:3px;padding:1px 5px;font:500 10.5px 'JetBrains Mono',monospace">F5</kbd> で再読み込み後にもう一度試してください。</li>
+          <li><strong>PPTに貼ると小さい：</strong> 「🖼 PNG」は 3× 解像度で出力されるので、貼り付け後に縮小してOK。粗くなりません。</li>
+          <li><strong>図を残しておきたい：</strong> 「💾 TXT」でASCII原文として保存。後日「📥 貼付」で復元できます。</li>
+          <li><strong>ゼロから作り直したい：</strong> 「🗑 全消去」 → 「✨ 生成」。<kbd style="background:#F4EFE3;border:1px solid #D4CCBE;border-radius:3px;padding:1px 5px;font:500 10.5px 'JetBrains Mono',monospace">Ctrl</kbd>+<kbd style="background:#F4EFE3;border:1px solid #D4CCBE;border-radius:3px;padding:1px 5px;font:500 10.5px 'JetBrains Mono',monospace">Z</kbd> で戻せます。</li>
+        </ul>
+      </section>
+
+      <div class="help-foot">
+        <span>ascii · workspace · v1</span>
+        <em>powered by Claude Code</em>
+        <span>esc to close</span>
+      </div>
+    </div>
+  `;
+}
+function openHelp(){
+  if(document.getElementById('helpOverlay')) return;
+  // Don't stack on top of other modals (e.g. load-text dialog)
+  if(document.querySelector('.modal-overlay')) return;
+  const ov = document.createElement('div');
+  ov.id = 'helpOverlay';
+  ov.className = 'modal-overlay';
+  ov.innerHTML = buildHelpHTML();
+  document.body.appendChild(ov);
+  ov.querySelector('#helpClose').onclick = closeHelp;
+  ov.addEventListener('click', e=>{ if(e.target===ov) closeHelp(); });
+  // Lock body scroll behind modal
+  document.body.style.overflow = 'hidden';
+}
+function closeHelp(){
+  const ov = document.getElementById('helpOverlay');
+  if(ov){ ov.remove(); document.body.style.overflow = ''; }
+}
+document.getElementById('helpBtn').addEventListener('click', openHelp);
+window.addEventListener('keydown', e=>{
+  // F1 / ? to open help (not while typing in inputs)
+  const isInput = e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA';
+  if(e.key==='F1'){ e.preventDefault(); openHelp(); return; }
+  if(e.key==='?' && !isInput && !e.ctrlKey && !e.metaKey){ e.preventDefault(); openHelp(); return; }
+  if(e.key==='Escape' && document.getElementById('helpOverlay')){ closeHelp(); }
+});
+
+setTool('pen');
+render();
+updateButtons();
+
+})();
+</script>
+</body>
+</html>
