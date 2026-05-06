@@ -4,7 +4,9 @@
 > Claude Code CLI のサブスクリプション経由で動くので **API キー不要**、しかも **ファイルは一切書き換えません**。
 > Windows / Claude Code Skill 形式。
 
-![ascii-draw screenshot](screenshots/screen1.png)
+<a href="screenshots/screen1.png">
+  <img src="screenshots/screen1.png" alt="ascii-draw screenshot" width="100%">
+</a>
 
 ## こんな人に
 
@@ -162,7 +164,3 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 ## ライセンス
 
 MIT License — 詳細は [LICENSE](LICENSE) を参照。
-
-## Contributing
-
-Issue / PR 歓迎です。プロンプトのベスプラを追加したい場合は [`ascii-draw/references/prompt-cookbook.md`](ascii-draw/references/prompt-cookbook.md) に追記する形で送ってください。
